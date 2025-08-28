@@ -39,3 +39,41 @@
 
 **一句话总结：**  
 <mark>Attention 的主要成本来自两个 $n \times n$ 矩阵乘法，时间复杂度是 $O(n^2 d)$，瓶颈在序列长度平方项。</mark>
+
+### Q. Transformer 中 Attention 的本质是什么？你能从数学角度简要解释一下吗？
+> **Company**: 淘天 ｜ **Round**: Agent智能体 一面 ｜ **Date**: 2025-08-26 ｜ **Tags**: [Attention, Transformer]
+
+- **直观理解**  
+  Attention 的核心思想是：**在处理某个词时，不是平均看所有上下文，而是学会“更关注相关的词”**。  
+  它相当于一个“加权信息聚合器”，相关性强的词权重大，不相关的权重小。
+
+- **数学公式**  
+  给定输入序列 $X \in \mathbb{R}^{n \times d}$，Attention 的计算过程为：  
+
+  1. 先通过可学习矩阵得到 **Query, Key, Value**：  
+     $$
+     Q = XW_Q,\quad K = XW_K,\quad V = XW_V
+     $$
+  2. 计算相似度（相关性）：  
+     $$
+     \text{score}(Q,K) = \frac{QK^\top}{\sqrt{d_k}}
+     $$
+     - 这是 Query 与 Key 的点积，相似度越高说明更相关。  
+     - 除以 $\sqrt{d_k}$ 是为了防止数值过大导致梯度消失/爆炸。  
+  3. 归一化成权重（注意力分布）：  
+     $$
+     \alpha = \text{softmax}\big(\text{score}(Q,K)\big)
+     $$
+  4. 用权重对 Value 做加权求和，得到最终输出：  
+     $$
+     \text{Attention}(Q,K,V) = \alpha V
+     $$
+
+- **总结**  
+  - Query 表示“我要关注什么”；  
+  - Key 表示“你能提供什么信息”；  
+  - Value 表示“真正的信息内容”；  
+  - 点积 + softmax 就是“分配注意力权重”。  
+
+**一句话总结：**  
+<mark>Attention 的本质是 **基于 Query-Key 相似度，对 Value 进行加权求和**，从而实现信息的动态聚合和建模长程依赖。</mark>

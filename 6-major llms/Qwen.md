@@ -47,3 +47,50 @@
 | **思维模式**   | 无               | 无               | 动态切换（深推/快应） | 双模型分立（Thinking / Non-thinking） |
 | **训练数据量** | 18T tokens       | 18T tokens       | 36T tokens            | 未公布（增量）      |
 
+### Q. 训练Qwen 选择的训练阶段和Loss函数是如何决定的？
+> **Company**: 淘天 | **Round**: 算法工程师 一面 ｜ **Date**: 2025-08-26 ｜ **Tags**: [Qwen, 大模型, 训练阶段, Loss函数]
+
+
+1. **训练阶段设计**  
+   - **预训练 (Pre-training)**：  
+     - 大规模无监督文本（网页、书籍、代码等）。  
+     - 目标是学习通用语言建模能力。  
+   - **监督微调 (SFT, Supervised Fine-tuning)**：  
+     - 人工或合成的高质量指令–回答对。  
+     - 让模型学会遵循指令，保证基本可用性。  
+   - **对齐训练 (Post-training)**：  
+     - RLHF、DPO 等，基于人类或 AI 偏好优化。  
+     - 提升回答的安全性、礼貌性、偏好一致性。  
+   - **扩展训练**（Qwen 系列常见）：  
+     - 长上下文扩展 (128K, 1M tokens)，采用 **NTK scaling / YaRN** 策略。  
+     - 特定领域任务（数学、代码、翻译）再进行额外阶段的 domain SFT + RL。  
+
+2. **Loss 函数的选择与作用**  
+   - **语言建模 Loss (CE Loss)**：  
+     - 预训练 & SFT 的核心损失函数。  
+     - 公式：  
+       $$
+       \mathcal{L}_{\text{CE}} = - \sum_{t} \log P_\theta(y_t | y_{<t})
+       $$  
+     - 保证模型能学到 token 预测能力。  
+   - **RLHF 中的 PPO Loss**：  
+     - 最大化奖励模型打分，带 KL 正则：  
+       $$
+       \mathcal{L}_{\text{PPO}} = \mathbb{E}_t \big[\min(r_t(\theta) A_t,\; \text{clip}(r_t(\theta),1-\epsilon,1+\epsilon) A_t ) \big]
+       $$  
+   - **DPO Loss**（Qwen3/3.5 中常用）：  
+     - 基于偏好对的直接优化，无需奖励模型：  
+       $$
+       \mathcal{L}_{\text{DPO}} = - \mathbb{E}_{(x, y^+, y^-)} \log \sigma\big(\beta (\log \pi_\theta(y^+|x) - \log \pi_\theta(y^-|x))\big)
+       $$  
+   - **特殊任务 Loss**：  
+     - 代码任务：可能加入 AST 对齐 Loss 或 pass@k。  
+     - 翻译/多语言任务：可能加入对比学习 Loss。  
+     - 长上下文：可能加入位置对比 Loss（帮助模型学习远距离 token 关系）。  
+
+3. **为什么要分阶段 + 多 Loss 结合？**  
+   - **分阶段**：降低训练难度，从“学语言”到“学指令”再到“学人类偏好”。  
+   - **多 Loss**：保证不同能力兼顾，例如 CE 保证语言流畅性，RLHF/DPO 提升对齐性，特殊 Loss 提升领域能力。  
+
+**一句话总结：**  
+<mark>Qwen 的训练采用“预训练 → SFT → Post-training → 领域扩展”的分阶段流程，Loss 函数从通用的交叉熵到 RLHF/DPO，再到领域专用 Loss 逐步叠加，目的是在通用性、可用性、对齐性和专业性之间找到平衡。</mark>
