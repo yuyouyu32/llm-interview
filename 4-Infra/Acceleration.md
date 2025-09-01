@@ -68,3 +68,15 @@ ZeRO Stage 3 的核心是 **参数分片**：每张 GPU 只保存自己负责的
 
 
 <mark>FlashAttention 通过 IO 感知的优化（tiling、在线 softmax、kernel fusion），显著减少显存读写，从而在保持精确计算的同时，大幅提升速度与内存效率。</mark>
+
+
+### Q. GPU 分区是怎么做的？
+> **Company**: 阿里 | **Round**: 算法工程师 一面 ｜ **Date**: 2025-08-26 ｜ **Tags**: [吞吐率优化, GPU 分区]
+
+- **GPU 分区 (GPU Partitioning) 的思路**  
+  - **显存分区**：将显存切分为 **KV Cache 区、计算区、通信缓冲区**，避免相互干扰。  
+  - **计算分区**：利用 **block/warp 级并行**，不同 SM 处理不同 tile 的 QK，重叠计算与访存。  
+  - **流水线并行**：一部分 GPU 计算前向 attention，另一部分同时做 softmax 与 $PV$，提升并行度。  
+  - **多租户/多流 (CUDA Streams)**：把不同推理请求映射到不同 stream，实现并行调度，提高 GPU 利用率。  
+
+<mark>GPU 分区则从 **显存管理与并行调度** 层面提升利用率，常与 KV Cache/批处理/流水并行结合使用。</mark>
