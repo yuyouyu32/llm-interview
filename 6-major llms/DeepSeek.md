@@ -79,3 +79,32 @@ DeepSeek-R1 在 DeepSeek-V3 基础上，采用 **多阶段训练 + 冷启动数�
 | 6 | 蒸馏 | 产出多尺寸模型，适配不同部署需求 |
 
 <mark>**总结**：DeepSeek-R1 的训练是一个由浅入深的多阶段策略：从少量冷启动数据微调，到“无监督自我强化训练”，再结合语言一致性优化与合成大规模数据，最后通过蒸馏实现高性能模型家族。其思维链 自发增强 + 可读性优化 和 强推理能力 的融合，是其对标 OpenAI-o1 的关键所在。<mark>
+
+### Q. 讲讲 DeepSeek 的 MLA(Multi-Head Latent Attention, 多头潜在注意力)？
+> **Company**: 快手 ｜ **Round**: 算法工程师 一面 ｜ **Date**: 2025-09-01 ｜ **Tags**: [DeepSeek, MLA]
+
+**1. 什么是 MLA（Multi-Head Latent Attention）？**  
+- MLA 是 DeepSeek 在其 V2、V3 和 R1 等多个模型版本中提出的一种创新注意力机制，用于显著压缩 KV cache，从而提升推理效率。  
+- 其核心思路是：将高维的 Key/Value 信息映射为低维的“latent”（潜在）向量，缓存时仅存储这部分低维向量，在推理时再通过网络映射回高维，从而实现 KV cache 的大幅压缩。
+
+**2. 主要优势**  
+- **极大地压缩 KV cache 大小**，例如论文中提到：DeepSeek-V2 的 KV cache 存储减少了约 90% 以上，且仅带来很小的性能损失（如 LongBench 下降约 0.5%）。  
+- DeepSeek-V2 中，还实现了训练成本与推理效率的提升：训练成本降低 ~42.5%，生成吞吐率提升 ~5.76 倍。  
+- 在后续版本 R1 中，MLA 进一步在 KV cache 压缩上取得了极致表现（如实现 57 倍压缩），同时推理速度提高超过 6 倍，并保持模型性能。
+
+**3. 背后的机制解析**  
+- 输入隐藏状态 \(h_t\) 通过一个线性层映射到一个低维 latent 向量 \(c^K V_t\)，这就是要缓存的内容；在推理时再通过两个线性映射重构回原始维度的 Key/Value：  
+  \[
+  c^{KV}_t = \text{Linear}_{\text{down}}(h_t);\quad
+  K_t = \text{Linear}_{\text{up\,to\,K}}(c^{KV}_t);\quad
+  V_t = \text{Linear}_{\text{up\,to\,V}}(c^{KV}_t)
+  \]  
+  这是一种低秩 joint compression（低秩联合压缩）策略。
+- 论文还提出了从传统 MHA 转换到 MLA 的 fine-tuning 方法（MHA2MLA），包括基于 RoPE 的降维优化与对 K/V 参数的联合 SVD 低秩逼近策略，使得几乎无需重新训练就能适配 MLA 架构。
+
+**4. 工程及应用亮点**  
+- MLA 是 DeepSeek 大模型系列（V2/V3/R1）的重要推理优化核心，实现了高效长上下文推理与成本节省的“双赢”。  
+- 社区生态支持也在快速兴起，例如 vLLM 已集成 MLA 支持与 FP8 优化，进一步推动高效生成模型的落地。
+
+<mark>核心：MLA 是一种通过将高维 KV 缓存压缩成低维 latent 表达并在需要时重构的注意力机制，使得长上下文推理在节省存储和计算的同时，仍能保持模型性能。</mark>
+
