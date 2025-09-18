@@ -28,7 +28,7 @@ LLM 的训练流程，细分为：
 - 对话能力（MT-Bench）
 - 真实性与鲁棒性（TruthfulQA 等）
 
-### 4-compression/
+### 4-infra/
 模型压缩与加速：
 - 量化方法（GPTQ、AWQ、SmoothQuant）
 - 蒸馏方法（DistilGPT、MiniLM）
@@ -39,6 +39,14 @@ LLM 的训练流程，细分为：
 - **Retrieval**：RAG 与知识库检索  
 - **Reranking**：排序与重排模型  
 - **Orchestration**：多工具调用与 Agent 工作流设计
+
+### 6-major llms/
+主流 LLMs 介绍与对比
+
+### 7-case studies/
+典型面试题目与解答，按场景分类：
+- **1. Game**：游戏行业相关
+- **2. E-commerce**：电商行业相关
 
 
 ## 🤝 如何贡献面试 QA
@@ -51,7 +59,7 @@ LLM 的训练流程，细分为：
 - …  
 
 ### ✍️ 填写规范
-- Q：面试题目，标题以 ### QX. 开头（编号可自增）
+- Q：面试题目，标题以 ### Q. 开头
 - Meta 信息：公司、面试轮次、时间、标签（用于检索）
 - A：你的回答，结构化清晰，必要时使用列表或表格
 
